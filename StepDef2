@@ -1,0 +1,28 @@
+package stepdefinitions;
+
+import io.cucumber.java.en.Then;
+import org.junit.Assert;
+import utils.PdfUtils;
+
+import java.util.List;
+
+public class PdfSteps {
+
+    @Then("the PDF file {string} should contain text {string}")
+    public void validatePdfContent(String pdfFile, String expectedText) throws Exception {
+        // Use PDFBox to extract text
+        org.apache.pdfbox.pdmodel.PDDocument document = org.apache.pdfbox.pdmodel.PDDocument.load(new java.io.File(pdfFile));
+        org.apache.pdfbox.text.PDFTextStripper stripper = new org.apache.pdfbox.text.PDFTextStripper();
+        String pdfText = stripper.getText(document);
+        document.close();
+
+        Assert.assertTrue("Expected text not found in PDF!", pdfText.contains(expectedText));
+    }
+
+    @Then("convert PDF file {string} into images and save in {string}")
+    public void convertPdfToImages(String pdfFile, String outputDir) throws Exception {
+        List<String> images = PdfUtils.convertPdfToImages(pdfFile, outputDir);
+        System.out.println("✅ Saved images: " + images);
+        // Here you can attach them into Extent/Allure/Cucumber report
+    }
+}
