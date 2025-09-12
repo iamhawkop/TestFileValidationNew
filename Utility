@@ -1,0 +1,33 @@
+package utils;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+public class PdfUtils {
+
+    public static List<String> convertPdfToImages(String pdfPath, String outputDir) throws Exception {
+        File file = new File(pdfPath);
+        PDDocument document = PDDocument.load(file);
+        PDFRenderer renderer = new PDFRenderer(document);
+
+        List<String> imagePaths = new ArrayList<>();
+        int pageCount = document.getNumberOfPages();
+
+        for (int i = 0; i < pageCount; i++) {
+            BufferedImage image = renderer.renderImageWithDPI(i, 200); // 200 DPI for good quality
+            String outputFilePath = Paths.get(outputDir, "page_" + (i + 1) + ".png").toString();
+            ImageIO.write(image, "PNG", new File(outputFilePath));
+            imagePaths.add(outputFilePath);
+        }
+
+        document.close();
+        return imagePaths;
+    }
+}
