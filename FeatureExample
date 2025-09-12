@@ -1,0 +1,8 @@
+@Then("convert PDF file {string} into images and save in {string}")
+public void convertPdfToImages(String pdfFile, String outputDir) throws Exception {
+    List<String> images = PdfUtils.convertPdfToImages(pdfFile, outputDir);
+    for (String imgPath : images) {
+        io.cucumber.java.Scenario scenario = hooks.Hooks.scenario; // assuming you stored Scenario in Hooks
+        scenario.attach(new java.io.FileInputStream(imgPath), "image/png", "PDF Page Screenshot");
+    }
+}
