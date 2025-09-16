@@ -1,0 +1,20 @@
+public static File waitForDownload(String downloadDir, String expectedPartialName, int timeoutSeconds) throws InterruptedException {
+    File dir = new File(downloadDir);
+    File[] files;
+    int waited = 0;
+
+    while (waited < timeoutSeconds) {
+        files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                String name = file.getName();
+                if (!name.endsWith(".crdownload") && name.contains(expectedPartialName)) {
+                    return file; // ✅ Found the final file
+                }
+            }
+        }
+        Thread.sleep(1000);
+        waited++;
+    }
+    throw new RuntimeException("Download not completed in " + timeoutSeconds + " seconds");
+}
