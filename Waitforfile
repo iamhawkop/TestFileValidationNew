@@ -1,0 +1,24 @@
+public class FileUtilsHelper {
+    public static File waitForFile(String dirPath, String expectedName, int timeoutSeconds) throws InterruptedException {
+        File dir = new File(dirPath);
+        File foundFile = null;
+        int waited = 0;
+
+        while (waited < timeoutSeconds) {
+            File[] files = dir.listFiles();
+            if (files != null && files.length > 0) {
+                if (expectedName == null) {
+                    return files[0]; // return first downloaded
+                }
+                for (File f : files) {
+                    if (f.getName().equals(expectedName)) {
+                        return f;
+                    }
+                }
+            }
+            Thread.sleep(1000);
+            waited++;
+        }
+        throw new RuntimeException("No file found in " + dirPath + " after " + timeoutSeconds + " seconds");
+    }
+}
