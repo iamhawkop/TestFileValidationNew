@@ -81,4 +81,29 @@ public class DownloadStepDef {
         Toolkit.getDefaultToolkit().getSystemClipboard()
                 .setContents(new java.awt.datatransfer.StringSelection(string), null);
     }
+// Paste folder path
+setClipboardData(downloadPath);
+
+robot.keyPress(KeyEvent.VK_CONTROL);
+robot.keyPress(KeyEvent.VK_V);
+robot.keyRelease(KeyEvent.VK_V);
+robot.keyRelease(KeyEvent.VK_CONTROL);
+
+robot.delay(1000);
+
+// Press TAB 2-3 times (adjust as per system) to reach Save button
+robot.keyPress(KeyEvent.VK_TAB);
+robot.keyRelease(KeyEvent.VK_TAB);
+
+robot.delay(500);
+
+robot.keyPress(KeyEvent.VK_TAB);
+robot.keyRelease(KeyEvent.VK_TAB);
+
+robot.delay(500);
+
+// Press Enter to click Save
+robot.keyPress(KeyEvent.VK_ENTER);
+robot.keyRelease(KeyEvent.VK_ENTER);
+
 }
