@@ -1,0 +1,84 @@
+import io.cucumber.java.en.When;
+import io.cucumber.java.en.Then;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.By;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.IOException;
+import java.awt.image.BufferedImage;
+import java.nio.file.Paths;
+import org.apache.commons.io.FileUtils;
+
+public class DownloadStepDef {
+
+    WebDriver driver;
+
+    @When("I click on download button")
+    public void i_click_on_download_button() throws Exception {
+        WebElement downloadBtn = driver.findElement(By.id("downloadBtn")); // update locator
+        downloadBtn.click();
+
+        // wait for Save As dialog
+        Thread.sleep(3000);
+
+        // Use Robot to handle Windows Save As
+        Robot robot = new Robot();
+        robot.delay(2000);
+
+        // Paste the download path
+        String downloadPath = System.getProperty("user.dir") + "\\target\\downloads";
+        setClipboardData(downloadPath);
+
+        // CTRL + V to paste path
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(KeyEvent.VK_V);
+        robot.keyRelease(KeyEvent.VK_V);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+
+        robot.delay(1000);
+
+        // Press Enter to confirm Save
+        robot.keyPress(KeyEvent.VK_ENTER);
+        robot.keyRelease(KeyEvent.VK_ENTER);
+
+        Thread.sleep(5000); // wait for download
+    }
+
+    @Then("I open the file and take screenshot")
+    public void i_open_the_file_and_take_screenshot() throws Exception {
+        String downloadPath = System.getProperty("user.dir") + "\\target\\downloads";
+
+        // Get latest downloaded file
+        File folder = new File(downloadPath);
+        File[] files = folder.listFiles();
+        File latestFile = files[0];
+        for (File file : files) {
+            if (file.lastModified() > latestFile.lastModified()) {
+                latestFile = file;
+            }
+        }
+
+        // Open the file
+        Desktop.getDesktop().open(latestFile);
+
+        Thread.sleep(3000); // wait to open
+
+        // Take full desktop screenshot
+        Robot robot = new Robot();
+        Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+        BufferedImage screenFullImage = robot.createScreenCapture(screenRect);
+
+        String screenshotPath = downloadPath + "\\screenshot.png";
+        ImageIO.write(screenFullImage, "png", new File(screenshotPath));
+
+        System.out.println("Screenshot saved at: " + screenshotPath);
+    }
+
+    private static void setClipboardData(String string) {
+        Toolkit.getDefaultToolkit().getSystemClipboard()
+                .setContents(new java.awt.datatransfer.StringSelection(string), null);
+    }
+}
