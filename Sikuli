@@ -1,0 +1,76 @@
+package utils;
+
+import org.sikuli.script.Pattern;
+import org.sikuli.script.Screen;
+
+public class SikuliUtils {
+    private static final Screen screen = new Screen();
+
+    // Click on an image
+    public static void click(String imageName, int waitTime) throws Exception {
+        Pattern pattern = new Pattern("src/test/resources/sikuli_images/" + imageName + ".png");
+        screen.wait(pattern, waitTime);
+        screen.click(pattern);
+    }
+
+    // Type text into an input box
+    public static void type(String text) throws Exception {
+        screen.type(text);
+    }
+
+    // Check if an image exists
+    public static boolean exists(String imageName, int waitTime) throws Exception {
+        Pattern pattern = new Pattern("src/test/resources/sikuli_images/" + imageName + ".png");
+        return screen.exists(pattern, waitTime) != null;
+    }
+}
+
+stepdef
+
+import io.cucumber.java.en.Then;
+import utils.SikuliUtils;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+
+public class DownloadPdfSteps {
+
+    @Then("I download pdf, save with sikuli, open in adobe, take screenshot and close")
+    public void download_and_handle_pdf() throws Exception {
+        String downloadPath = System.getProperty("user.dir") + "\\target\\downloads";
+        new File(downloadPath).mkdirs(); // ensure folder exists
+
+        // Step 1: Handle Save As dialog with Sikuli
+        SikuliUtils.click("filename_box", 10); 
+        SikuliUtils.type(downloadPath + "\\myDownloadedFile.pdf");
+        SikuliUtils.click("save_button", 10);
+
+        System.out.println("✅ File saved at: " + downloadPath);
+
+        // Step 2: Open saved PDF in Adobe
+        File pdfFile = new File(downloadPath + "\\myDownloadedFile.pdf");
+        if (!pdfFile.exists()) {
+            throw new RuntimeException("File not found: " + pdfFile.getAbsolutePath());
+        }
+
+        Desktop.getDesktop().open(pdfFile);
+
+        // Wait for Adobe to open
+        Thread.sleep(4000);
+
+        // Step 3: Take screenshot of entire screen
+        Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+        BufferedImage screenFullImage = new Robot().createScreenCapture(screenRect);
+
+        String screenshotPath = downloadPath + "\\pdf_screenshot.png";
+        ImageIO.write(screenFullImage, "png", new File(screenshotPath));
+        System.out.println("📸 Screenshot saved at: " + screenshotPath);
+
+        // Step 4: Close Adobe using Sikuli
+        SikuliUtils.click("close_button", 10);
+
+        System.out.println("✅ Adobe closed successfully");
+    }
+}
