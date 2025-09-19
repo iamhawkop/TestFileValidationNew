@@ -74,3 +74,43 @@ public class DownloadPdfSteps {
         System.out.println("✅ Adobe closed successfully");
     }
 }
+
+package steps;
+
+import io.cucumber.java.en.Then;
+import org.sikuli.script.Key;
+import org.sikuli.script.Pattern;
+import org.sikuli.script.Screen;
+
+public class SaveAsSteps {
+
+    @Then("I handle save as dialog and save pdf with sikuli offset")
+    public void handleSaveAsWithOffset() throws Exception {
+        Screen screen = new Screen();
+
+        // Build paths dynamically
+        String baseDir = System.getProperty("user.dir") + "\\src\\test\\resources\\sikuli_images\\";
+        String downloadPath = System.getProperty("user.dir") + "\\target\\downloads\\myDownloadedFile.pdf";
+
+        // Step 1: Find "File name:" label
+        Pattern fileNameLabel = new Pattern(baseDir + "file_name_label.png").similar(0.9f);
+        screen.wait(fileNameLabel, 10);
+
+        // Step 2: Click with offset (e.g., 120px to right → lands inside input box)
+        screen.click(fileNameLabel.targetOffset(120, 0));
+
+        // Step 3: Clear existing text
+        screen.type("a", Key.CTRL);   // Select all
+        screen.type(Key.BACKSPACE);   // Delete
+
+        // Step 4: Type new filename
+        screen.type(downloadPath);
+
+        // Step 5: Click Save button
+        Pattern saveBtn = new Pattern(baseDir + "save_button.png").similar(0.9f);
+        screen.wait(saveBtn, 10);
+        screen.click(saveBtn);
+
+        System.out.println("✅ File saved successfully at: " + downloadPath);
+    }
+}
