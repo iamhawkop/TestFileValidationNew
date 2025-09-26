@@ -1,0 +1,41 @@
+@When("I enter/select {string} under column {string} in row {int}")
+public void enterOrSelectInGridCell(String value, String columnName, int rowNumber) {
+    WebElement table = driver.findElement(By.xpath("//table"));
+
+    // Find column index by header name
+    List<WebElement> headers = table.findElements(By.xpath(".//thead/tr/th"));
+    int colIndex = -1;
+    for (int i = 0; i < headers.size(); i++) {
+        if (headers.get(i).getText().trim().equalsIgnoreCase(columnName)) {
+            colIndex = i + 1;
+            break;
+        }
+    }
+    if (colIndex == -1) {
+        throw new RuntimeException("Column with name '" + columnName + "' not found!");
+    }
+
+    // Get the cell element
+    WebElement cell = table.findElement(
+            By.xpath(".//tbody/tr[" + rowNumber + "]/td[" + colIndex + "]")
+    );
+
+    // Now check what element is inside the cell
+    try {
+        // Case 1: Dropdown
+        WebElement dropdownEl = cell.findElement(By.tagName("select"));
+        Select dropdown = new Select(dropdownEl);
+        dropdown.selectByVisibleText(value);
+        return;
+    } catch (NoSuchElementException ignored) {}
+
+    try {
+        // Case 2: Input box
+        WebElement inputEl = cell.findElement(By.xpath(".//input | .//textarea"));
+        inputEl.clear();
+        inputEl.sendKeys(value);
+        return;
+    } catch (NoSuchElementException ignored) {}
+
+    throw new RuntimeException("No input/select element found in row " + rowNumber + ", column " + columnName);
+}
