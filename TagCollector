@@ -1,0 +1,48 @@
+package utils;
+
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class TagCollector {
+
+    private static final String BASE_PATH = "src/test/resources/features"; // change if needed
+    private static final String TARGET_TAG = "@regression_master_suite";
+
+    public static void main(String[] args) throws IOException {
+        Set<String> additionalTags = new HashSet<>();
+
+        // Pattern to match groups of tags before a Scenario or Scenario Outline
+        Pattern pattern = Pattern.compile("((?:@\\w+\\s*)+)\\s*(Scenario|Scenario Outline)");
+
+        Files.walk(Paths.get(BASE_PATH))
+                .filter(path -> path.toString().endsWith(".feature"))
+                .forEach(path -> {
+                    try {
+                        String content = Files.readString(path);
+                        Matcher matcher = pattern.matcher(content);
+
+                        while (matcher.find()) {
+                            String tagBlock = matcher.group(1).trim();
+                            List<String> tags = Arrays.asList(tagBlock.split("\\s+"));
+                            if (tags.contains(TARGET_TAG)) {
+                                tags.stream()
+                                    .filter(tag -> !tag.equals(TARGET_TAG))
+                                    .forEach(additionalTags::add);
+                            }
+                        }
+                    } catch (IOException e) {
+                        System.err.println("Error reading file: " + path + " -> " + e.getMessage());
+                    }
+                });
+
+        if (additionalTags.isEmpty()) {
+            System.out.println("No additional tags found along with " + TARGET_TAG);
+        } else {
+            System.out.println("✅ Additional tags found along with " + TARGET_TAG + ":");
+            additionalTags.stream().sorted().forEach(System.out::println);
+        }
+    }
+}
