@@ -1,0 +1,9 @@
+$domain = "your-api-domain.com"
+$cert = [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+$tcp = New-Object System.Net.Sockets.TcpClient($domain, 443)
+$stream = New-Object System.Net.Security.SslStream($tcp.GetStream(), $false, ({$true} -as [Net.Security.RemoteCertificateValidationCallback]))
+$stream.AuthenticateAsClient($domain)
+$cert = $stream.RemoteCertificate
+$bytes = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
+[IO.File]::WriteAllBytes("server.crt", $bytes)
+$tcp.Close()
