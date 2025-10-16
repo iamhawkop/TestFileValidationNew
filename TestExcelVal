@@ -1,0 +1,89 @@
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Base64;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+public class JiraToExcel {
+    public static void main(String[] args) {
+        String jiraUrl = "https://your-jira-domain/rest/api/2/search";
+        String username = "your-email@example.com";
+        String apiToken = "your-api-token";
+        String sprintId = "1234"; // Replace with your sprint ID
+        int startAt = 0;
+        int maxResults = 100; // batch size
+        boolean hasMore = true;
+
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Tests");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Key");
+            header.createCell(1).setCellValue("Summary");
+            header.createCell(2).setCellValue("Status");
+            header.createCell(3).setCellValue("Tested By");
+
+            int rowNum = 1;
+
+            while (hasMore) {
+                String jql = "issuetype=Story AND status=Closed AND sprint=" + sprintId;
+                String urlStr = jiraUrl + "?jql=" + java.net.URLEncoder.encode(jql, "UTF-8") +
+                                "&fields=key,summary,status,customfield_12345" + // replace customfield_12345 with Tested By
+                                "&startAt=" + startAt +
+                                "&maxResults=" + maxResults;
+
+                URL url = new URL(urlStr);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                String auth = username + ":" + apiToken;
+                String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+                conn.setRequestProperty("Authorization", "Basic " + encodedAuth);
+                conn.setRequestProperty("Accept", "application/json");
+
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+                br.close();
+
+                JSONObject response = new JSONObject(sb.toString());
+                JSONArray issues = response.getJSONArray("issues");
+
+                if (issues.length() == 0) {
+                    hasMore = false;
+                    break;
+                }
+
+                for (int i = 0; i < issues.length(); i++) {
+                    JSONObject issue = issues.getJSONObject(i);
+                    String key = issue.getString("key");
+                    JSONObject fields = issue.getJSONObject("fields");
+                    String summary = fields.getString("summary");
+                    String status = fields.getJSONObject("status").getString("name");
+                    String testedBy = fields.optString("customfield_12345", ""); // replace with your field ID
+
+                    Row row = sheet.createRow(rowNum++);
+                    row.createCell(0).setCellValue(key);
+                    row.createCell(1).setCellValue(summary);
+                    row.createCell(2).setCellValue(status);
+                    row.createCell(3).setCellValue(testedBy);
+                }
+
+                startAt += maxResults;
+            }
+
+            try (FileOutputStream fileOut = new FileOutputStream("JiraTests.xlsx")) {
+                workbook.write(fileOut);
+            }
+
+            System.out.println("XLSX file generated successfully!");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
