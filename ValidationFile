@@ -1,0 +1,36 @@
+import java.io.*;
+import java.util.List;
+import java.util.Map;
+
+public class FixedLengthFileWriter {
+
+    public static void writeFixedLengthFile(String filePath, List<Map<String, String>> dataTable) throws IOException {
+        StringBuilder lineBuilder = new StringBuilder();
+
+        for (Map<String, String> row : dataTable) {
+            String value = row.get("value");
+            int length = Integer.parseInt(row.get("length"));
+
+            // Pad the value to fixed length
+            String paddedValue = padRight(value, length);
+
+            // Append padded value + tab space
+            lineBuilder.append(paddedValue).append("\t");
+        }
+
+        // Write to file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
+            writer.write(lineBuilder.toString().trim());
+            writer.newLine();
+        }
+    }
+
+    private static String padRight(String text, int length) {
+        if (text == null) text = "";
+        if (text.length() > length) {
+            return text.substring(0, length); // truncate if longer
+        } else {
+            return String.format("%-" + length + "s", text); // pad with spaces
+        }
+    }
+}
