@@ -1,0 +1,22 @@
+Workbook wb = new XSSFWorkbook();
+Sheet sheet = wb.createSheet("JiraTests");
+
+Row header = sheet.createRow(0);
+header.createCell(0).setCellValue("Key");
+header.createCell(1).setCellValue("FeatureTeam");
+header.createCell(2).setCellValue("EpicKey");
+header.createCell(3).setCellValue("EpicTitle");
+
+int rowNum = 1;
+for (Map<String, String> row : results) {
+    Row r = sheet.createRow(rowNum++);
+    r.createCell(0).setCellValue(row.get("Key"));
+    r.createCell(1).setCellValue(row.get("FeatureTeam"));
+    r.createCell(2).setCellValue(row.get("EpicKey"));
+    r.createCell(3).setCellValue(row.get("EpicTitle"));
+}
+
+FileOutputStream out = new FileOutputStream("jira-tests.xlsx");
+wb.write(out);
+out.close();
+wb.close();
