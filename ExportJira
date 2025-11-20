@@ -1,0 +1,91 @@
+import java.net.http.*;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import com.fasterxml.jackson.databind.*;
+
+public class JiraTestFetcher {
+
+    private static final String JIRA_URL = "https://your-domain.atlassian.net";
+    private static final String EMAIL = "your-email@example.com";
+    private static final String API_TOKEN = "your-api-token";
+
+    private static final HttpClient client = HttpClient.newHttpClient();
+    private static final ObjectMapper mapper = new ObjectMapper();
+
+    public static void main(String[] args) throws Exception {
+        List<Map<String, String>> results = fetchAllTests();
+        results.forEach(System.out::println);
+    }
+
+    public static List<Map<String, String>> fetchAllTests() throws Exception {
+        List<Map<String, String>> data = new ArrayList<>();
+
+        int startAt = 0;
+        int maxResults = 100;
+
+        while (true) {
+            String body = """
+            {
+              "jql": "project = YOURPROJECT AND issuetype = Test AND labels = BOBCAT",
+              "maxResults": %d,
+              "startAt": %d,
+              "fields": ["customfield_11400", "customfield_10001"]
+            }
+            """.formatted(maxResults, startAt);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(JIRA_URL + "/rest/api/3/search"))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", basicAuth())
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            JsonNode root = mapper.readTree(response.body());
+
+            int total = root.get("total").asInt();
+            for (JsonNode issue : root.get("issues")) {
+
+                String key = issue.get("key").asText();
+                String featureTeam = getField(issue, "customfield_11400");
+                String epicKey = getField(issue, "customfield_10001");
+                String epicTitle = epicKey != null ? getEpicTitle(epicKey) : "";
+
+                Map<String, String> record = new HashMap<>();
+                record.put("Key", key);
+                record.put("FeatureTeam", featureTeam);
+                record.put("EpicKey", epicKey);
+                record.put("EpicTitle", epicTitle);
+
+                data.add(record);
+            }
+
+            startAt += maxResults;
+            if (startAt >= total) break;
+        }
+
+        return data;
+    }
+
+    private static String getEpicTitle(String epicKey) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(JIRA_URL + "/rest/api/3/issue/" + epicKey))
+                .header("Authorization", basicAuth())
+                .build();
+
+        HttpResponse<String> res = client.send(req, HttpResponse.BodyHandlers.ofString());
+        JsonNode root = mapper.readTree(res.body());
+        return root.get("fields").get("summary").asText();
+    }
+
+    private static String getField(JsonNode issue, String fieldName) {
+        JsonNode node = issue.get("fields").get(fieldName);
+        return node != null && !node.isNull() ? node.asText() : "";
+    }
+
+    private static String basicAuth() {
+        String auth = EMAIL + ":" + API_TOKEN;
+        return "Basic " + Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
+    }
+}
