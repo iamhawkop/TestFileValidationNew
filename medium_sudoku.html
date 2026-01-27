@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sudoku (Medium)</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  table { border-collapse: collapse; margin: 20px 0; }
+  td {
+    border: 1px solid #94a3b8;
+    width: 45px; height: 45px; text-align: center;
+  }
+  input {
+    width: 100%; height: 100%;
+    text-align: center; font-size: 18px;
+    background: #020617; color: #e5e7eb; border: none;
+  }
+  input:disabled { background: #1e293b; font-weight: bold; }
+  tr:nth-child(3n) td { border-bottom: 2px solid #e5e7eb; }
+  td:nth-child(3n) { border-right: 2px solid #e5e7eb; }
+  button {
+    padding: 8px 14px; margin: 5px;
+    font-size: 15px; cursor: pointer;
+    border: none; border-radius: 6px;
+  }
+  .validate { background: #22c55e; }
+  .reset { background: #eab308; }
+  .new { background: #38bdf8; }
+  #result { margin-top: 15px; font-size: 18px; }
+</style>
+</head>
+<body>
+
+<h2>🧩 Medium Sudoku</h2>
+<table id="sudoku"></table>
+
+<div>
+  <button class="validate" onclick="validateSudoku()">Validate</button>
+  <button class="reset" onclick="resetPuzzle()">Reset</button>
+  <button class="new" onclick="loadNewPuzzle()">New Puzzle</button>
+</div>
+
+<div id="result"></div>
+
+<script>
+const puzzles = [
+  [[5,0,0,0,7,0,0,0,2],[0,6,0,1,0,5,0,9,0],[0,0,8,0,0,0,5,0,0],
+   [0,0,0,6,0,1,0,0,0],[9,0,0,0,3,0,0,0,6],[0,0,0,9,0,8,0,0,0],
+   [0,0,1,0,0,0,2,0,0],[0,8,0,5,0,9,0,6,0],[4,0,0,0,1,0,0,0,9]],
+  [[0,0,6,0,0,2,0,0,9],[0,0,0,7,0,0,1,0,0],[1,0,0,0,9,0,0,6,0],
+   [0,0,0,5,0,0,0,1,0],[4,0,0,0,6,0,0,0,8],[0,1,0,0,0,9,0,0,0],
+   [0,9,0,0,1,0,0,0,4],[0,0,7,0,0,8,0,0,0],[6,0,0,2,0,0,9,0,0]]
+];
+
+function createGrid(puzzle) {
+  const table = document.getElementById("sudoku");
+  table.innerHTML = "";
+  puzzle.forEach(row => {
+    const tr = document.createElement("tr");
+    row.forEach(cell => {
+      const td = document.createElement("td");
+      const input = document.createElement("input");
+      if (cell !== 0) {
+        input.value = cell;
+        input.disabled = true;
+      } else {
+        input.maxLength = 1;
+        input.oninput = e => e.target.value = e.target.value.replace(/[^1-9]/g,"");
+      }
+      td.appendChild(input);
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+  document.getElementById("result").textContent = "";
+}
+
+function loadNewPuzzle() {
+  createGrid(puzzles[Math.floor(Math.random() * puzzles.length)]);
+}
+
+function resetPuzzle() {
+  document.querySelectorAll("#sudoku input").forEach(i => { if(!i.disabled) i.value=""; });
+  document.getElementById("result").textContent = "";
+}
+
+function validateSudoku() {
+  const inputs = document.querySelectorAll("#sudoku input");
+  let grid = Array.from({length:9},()=>[]);
+  for (let i=0;i<inputs.length;i++){
+    if(inputs[i].value===""){show("❌ Puzzle incomplete!");return;}
+    grid[Math.floor(i/9)].push(inputs[i].value);
+  }
+  const valid = a => new Set(a).size===9;
+  for(let i=0;i<9;i++)
+    if(!valid(grid[i])||!valid(grid.map(r=>r[i]))){show("❌ Rule violation!");return;}
+  for(let r=0;r<9;r+=3)
+    for(let c=0;c<9;c+=3){
+      let b=[];
+      for(let i=0;i<3;i++)for(let j=0;j<3;j++)b.push(grid[r+i][c+j]);
+      if(!valid(b)){show("❌ Rule violation!");return;}
+    }
+  show("✅ Correct! Well done 🎉");
+}
+function show(m){document.getElementById("result").textContent=m;}
+loadNewPuzzle();
+</script>
+
+</body>
+</html>
